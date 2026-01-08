@@ -1,0 +1,23 @@
+{
+  "name": "倉儲管理系統",
+  "description": "一個功能完整的倉儲管理系統，支援產品管理、庫存操作、報表分析等功能",
+  "image": "heroku/java",
+  "addons": [],
+  "env": {
+    "SPRING_PROFILES_ACTIVE": {
+      "description": "Spring Boot 環境配置",
+      "value": "heroku"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/java"
+    }
+  ]
+}

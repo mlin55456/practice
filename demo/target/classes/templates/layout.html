@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ?: '倉儲管理系統'">倉儲管理系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: #adb5bd;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        @media (min-width: 768px) {
+            .main-content {
+                margin-left: 250px;
+            }
+        }
+        .low-stock {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .out-of-stock {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- 側邊欄 -->
+    <nav class="sidebar position-fixed d-none d-md-block">
+        <div class="p-3">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-warehouse me-2"></i>倉儲管理
+            </h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-tachometer-alt me-2"></i>儀表板
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/products">
+                        <i class="fas fa-boxes me-2"></i>產品管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/transactions">
+                        <i class="fas fa-exchange-alt me-2"></i>庫存異動
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reports">
+                        <i class="fas fa-chart-bar me-2"></i>報表分析
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要內容區 -->
+    <div class="main-content">
+        <!-- 頂部導航 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-outline-secondary d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-brand mb-0 h1" th:text="${title} ?: '倉儲管理系統'">倉儲管理系統</span>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-primary" onclick="manualBackup()">
+                        <i class="fas fa-download me-1"></i>手動備份
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 頁面內容 -->
+        <div class="container-fluid p-4">
+            <div th:replace="${content}">
+                <!-- 頁面內容將在這裡插入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 手機版側邊欄 -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="mobileSidebar">
+        <div class="offcanvas-header bg-dark text-white">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-warehouse me-2"></i>倉儲管理
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body bg-dark">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="/">
+                        <i class="fas fa-tachometer-alt me-2"></i>儀表板
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="/products">
+                        <i class="fas fa-boxes me-2"></i>產品管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="/transactions">
+                        <i class="fas fa-exchange-alt me-2"></i>庫存異動
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="/reports">
+                        <i class="fas fa-chart-bar me-2"></i>報表分析
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // 手動備份功能
+        function manualBackup() {
+            axios.post('/api/sync/backup')
+                .then(response => {
+                    alert('資料備份成功！');
+                })
+                .catch(error => {
+                    alert('備份失敗：' + (error.response?.data?.error || error.message));
+                });
+        }
+
+        // 設置當前頁面的導航高亮
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

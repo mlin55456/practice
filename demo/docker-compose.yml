@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  inventory-management:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./data/backup:/app/data/backup
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/products"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀表板 - 倉儲管理系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: #adb5bd;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        @media (min-width: 768px) {
+            .main-content {
+                margin-left: 250px;
+            }
+        }
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .low-stock-alert {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <!-- 側邊欄 -->
+    <nav class="sidebar position-fixed d-none d-md-block">
+        <div class="p-3">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-warehouse me-2"></i>倉儲管理
+            </h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">
+                        <i class="fas fa-tachometer-alt me-2"></i>儀表板
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/products">
+                        <i class="fas fa-boxes me-2"></i>產品管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/transactions">
+                        <i class="fas fa-exchange-alt me-2"></i>庫存異動
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reports">
+                        <i class="fas fa-chart-bar me-2"></i>報表分析
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要內容區 -->
+    <div class="main-content">
+        <!-- 頂部導航 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-outline-secondary d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-brand mb-0 h1">儀表板</span>
+                <div class="ms-auto">
+                    <span id="onlineStatus" class="badge me-2">檢查中...</span>
+                    <span id="pendingCount" class="badge bg-warning me-2" style="display: none;">0</span>
+                    <button class="btn btn-outline-primary" onclick="manualBackup()">
+                        <i class="fas fa-download me-1"></i>手動備份
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 儀表板內容 -->
+        <div class="container-fluid p-4">
+            <!-- 統計卡片 -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">總產品數</h6>
+                                    <h3 id="totalProducts">-</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-boxes fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">總庫存價值</h6>
+                                    <h3 id="totalValue">-</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-dollar-sign fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">低庫存警告</h6>
+                                    <h3 id="lowStockCount">-</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">今日異動</h6>
+                                    <h3 id="todayTransactions">-</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-exchange-alt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 低庫存警告 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                低庫存警告
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="lowStockList">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> 載入中...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日異動記錄 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-clock text-info me-2"></i>
+                                今日異動記錄
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="todayTransactionsList">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> 載入中...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 庫存分析圖表 -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie text-primary me-2"></i>
+                                庫存分類分析
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/js/offline.js"></script>
+    <script>
+        let categoryChart;
+
+        // 載入儀表板資料
+        async function loadDashboardData() {
+            try {
+                // 載入產品資料
+                const productsResponse = await axios.get('/api/products');
+                const products = productsResponse.data;
+                
+                // 載入低庫存產品
+                const lowStockResponse = await axios.get('/api/products/low-stock');
+                const lowStockProducts = lowStockResponse.data;
+                
+                // 載入今日異動
+                const todayTransactionsResponse = await axios.get('/api/inventory/transactions/today');
+                const todayTransactions = todayTransactionsResponse.data;
+                
+                // 更新統計數據
+                updateStatistics(products, lowStockProducts, todayTransactions);
+                
+                // 更新低庫存列表
+                updateLowStockList(lowStockProducts);
+                
+                // 更新今日異動列表
+                updateTodayTransactionsList(todayTransactions);
+                
+                // 更新圖表
+                updateCategoryChart(products);
+                
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+            }
+        }
+
+        function updateStatistics(products, lowStockProducts, todayTransactions) {
+            // 總產品數
+            document.getElementById('totalProducts').textContent = products.length;
+            
+            // 總庫存價值
+            const totalValue = products.reduce((sum, product) => sum + (product.quantity * product.price), 0);
+            document.getElementById('totalValue').textContent = '$' + totalValue.toLocaleString();
+            
+            // 低庫存警告數
+            document.getElementById('lowStockCount').textContent = lowStockProducts.length;
+            
+            // 今日異動數
+            document.getElementById('todayTransactions').textContent = todayTransactions.length;
+        }
+
+        function updateLowStockList(lowStockProducts) {
+            const container = document.getElementById('lowStockList');
+            
+            if (lowStockProducts.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">目前沒有低庫存警告</div>';
+                return;
+            }
+            
+            const html = lowStockProducts.map(product => `
+                <div class="low-stock-alert p-2 mb-2 rounded">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${product.name}</strong>
+                            <small class="text-muted d-block">SKU: ${product.sku}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning">${product.quantity}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function updateTodayTransactionsList(transactions) {
+            const container = document.getElementById('todayTransactionsList');
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">今日尚無異動記錄</div>';
+                return;
+            }
+            
+            const html = transactions.slice(0, 5).map(transaction => {
+                const typeClass = transaction.type === 'IN' ? 'success' : transaction.type === 'OUT' ? 'danger' : 'warning';
+                const typeText = transaction.type === 'IN' ? '入庫' : transaction.type === 'OUT' ? '出庫' : '調整';
+                
+                return `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+                        <div>
+                            <strong>${transaction.product.name}</strong>
+                            <small class="text-muted d-block">${transaction.reason || '無說明'}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${typeClass}">${typeText}</span>
+                            <div class="small">${Math.abs(transaction.quantity)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function updateCategoryChart(products) {
+            const categoryData = {};
+            products.forEach(product => {
+                const category = product.category || '未分類';
+                categoryData[category] = (categoryData[category] || 0) + product.quantity;
+            });
+            
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+            
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        data: Object.values(categoryData),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 手動備份功能
+        function manualBackup() {
+            axios.post('/api/sync/backup')
+                .then(response => {
+                    alert('資料備份成功！');
+                })
+                .catch(error => {
+                    alert('備份失敗：' + (error.response?.data?.error || error.message));
+                });
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            
+            // 每5分鐘自動刷新資料
+            setInterval(loadDashboardData, 300000);
+        });
+    </script>
+</body>
+</html>
