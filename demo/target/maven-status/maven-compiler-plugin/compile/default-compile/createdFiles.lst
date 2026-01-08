@@ -1,0 +1,7 @@
+com\example\service\InventoryService.class
+com\example\repository\InventoryItemRepository.class
+com\example\config\DataInitializer.class
+com\example\controller\InventoryController.class
+com\example\InventoryApplication.class
+com\example\controller\InventoryApiController.class
+com\example\model\InventoryItem.class
